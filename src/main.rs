@@ -1,4 +1,4 @@
-use sare_security::{SecurityConfig, SecurityEvent, SecurityManager};
+use sare_security::{SecurityConfig, SecurityManager};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -10,50 +10,13 @@ async fn main() -> anyhow::Result<()> {
 
     // Initialize Configuration
     let config = Arc::new(RwLock::new(SecurityConfig::default()));
-    println!("\n[INFO] Initializing Security Manager...");
-    let mut manager = SecurityManager::new(config).await?;
-    println!("[INFO] System Active and Monitoring.");
+    let manager = Arc::new(RwLock::new(SecurityManager::new(config.clone()).await?));
 
-    // Simulate Safe Event
-    println!("\n--------------------------------------------------");
-    println!("Scenario 1: Routine Administrative Task");
-    println!("--------------------------------------------------");
-    let safe_event = SecurityEvent::CommandExecution {
-        command: "ls -la /var/log".to_string(),
-        user: "sysadmin".to_string(),
-        timestamp: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs(),
-        success: true,
-    };
-    println!("[EVENT] Command Execution: 'ls -la /var/log' by user 'sysadmin'");
-    let actions = manager.process_security_event(safe_event).await?;
-    println!("[RESULT] System Response: {:?}", actions);
-
-    // Simulate Malicious Event
-    println!("\n--------------------------------------------------");
-    println!("Scenario 2: Critical Threat Detection");
-    println!("--------------------------------------------------");
-    let malicious_event = SecurityEvent::CommandExecution {
-        command: "rm -rf / --no-preserve-root".to_string(),
-        user: "intruder".to_string(),
-        timestamp: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs(),
-        success: false,
-    };
-    println!("[EVENT] Command Execution: 'rm -rf /' by user 'intruder'");
-    println!("[ANALYSIS] Analyzing threat patterns and behavior...");
-    let actions = manager.process_security_event(malicious_event).await?;
-
-    println!("[RESULT] System Response:");
-    for action in actions {
-        println!("  - 🛑 {:?}", action);
+    // Run TUI
+    if let Err(e) = sare_security::ui::run(config, manager).await {
+        eprintln!("Application error: {}", e);
+        std::process::exit(1);
     }
-
-    println!("\n==================================================");
-    println!("✅ Demo Complete. System Integrity Maintained.");
-    println!("==================================================");
 
     Ok(())
 }

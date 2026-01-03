@@ -13,12 +13,15 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use std::sync::{Arc, Mutex};
+
+#[derive(Clone)]
 pub struct MLThreatDetector {
-    models: HashMap<String, MLModel>,
-    _feature_extractor: FeatureExtractor,
-    _anomaly_detector: AnomalyDetector,
-    pattern_classifier: PatternClassifier,
-    training_data: Vec<TrainingSample>,
+    models: Arc<Mutex<HashMap<String, MLModel>>>,
+    _feature_extractor: Arc<FeatureExtractor>,
+    _anomaly_detector: Arc<AnomalyDetector>,
+    pattern_classifier: Arc<PatternClassifier>,
+    training_data: Arc<Mutex<Vec<TrainingSample>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,20 +94,20 @@ impl MLThreatDetector {
         let pattern_classifier = Self::initialize_pattern_classifier();
 
         Ok(Self {
-            models: HashMap::new(),
-            _feature_extractor: feature_extractor,
-            _anomaly_detector: anomaly_detector,
-            pattern_classifier,
-            training_data: Vec::new(),
+            models: Arc::new(Mutex::new(HashMap::new())),
+            _feature_extractor: Arc::new(feature_extractor),
+            _anomaly_detector: Arc::new(anomaly_detector),
+            pattern_classifier: Arc::new(pattern_classifier),
+            training_data: Arc::new(Mutex::new(Vec::new())),
         })
     }
 
-    pub async fn analyze_threat(&mut self, event: &crate::SecurityEvent) -> Result<MLThreatResult> {
-        let features = self.extract_features(event).await?;
-        let threat_score = self.calculate_threat_score(&features).await?;
-        let anomalies = self.detect_anomalies(&features).await?;
-        let patterns = self.classify_patterns(&features).await?;
-        let confidence = self.calculate_confidence(&features, &patterns).await?;
+    pub fn analyze_threat(&self, event: &crate::SecurityEvent) -> Result<MLThreatResult> {
+        let features = self.extract_features(event)?;
+        let threat_score = self.calculate_threat_score(&features)?;
+        let anomalies = self.detect_anomalies(&features)?;
+        let patterns = self.classify_patterns(&features)?;
+        let confidence = self.calculate_confidence(&features, &patterns)?;
 
         let result = MLThreatResult {
             threat_score,
@@ -115,11 +118,11 @@ impl MLThreatDetector {
             model_used: "ensemble".to_string(),
         };
 
-        self.update_training_data(features, threat_score).await?;
+        self.update_training_data(features, threat_score)?;
         Ok(result)
     }
 
-    async fn extract_features(&self, event: &crate::SecurityEvent) -> Result<Vec<f64>> {
+    fn extract_features(&self, event: &crate::SecurityEvent) -> Result<Vec<f64>> {
         let mut features = Vec::new();
 
         match event {
@@ -293,7 +296,7 @@ impl MLThreatDetector {
         }
     }
 
-    async fn calculate_threat_score(&self, features: &[f64]) -> Result<f64> {
+    fn calculate_threat_score(&self, features: &[f64]) -> Result<f64> {
         let mut score = 0.0;
         let weights = vec![0.3, 0.2, 0.15, 0.15, 0.1, 0.1];
 
@@ -304,7 +307,7 @@ impl MLThreatDetector {
         Ok(score.min(1.0))
     }
 
-    async fn detect_anomalies(&self, features: &[f64]) -> Result<Vec<String>> {
+    fn detect_anomalies(&self, features: &[f64]) -> Result<Vec<String>> {
         let mut anomalies = Vec::new();
 
         if features.len() > 0 && features[0] > 100.0 {
@@ -322,7 +325,7 @@ impl MLThreatDetector {
         Ok(anomalies)
     }
 
-    async fn classify_patterns(&self, features: &[f64]) -> Result<Vec<Pattern>> {
+    fn classify_patterns(&self, features: &[f64]) -> Result<Vec<Pattern>> {
         let mut patterns = Vec::new();
 
         for pattern in &self.pattern_classifier.patterns {
@@ -348,7 +351,7 @@ impl MLThreatDetector {
         1.0 - (similarity / features.len() as f64)
     }
 
-    async fn calculate_confidence(&self, _features: &[f64], patterns: &[Pattern]) -> Result<f64> {
+    fn calculate_confidence(&self, _features: &[f64], patterns: &[Pattern]) -> Result<f64> {
         if patterns.is_empty() {
             return Ok(0.5);
         }
@@ -358,7 +361,7 @@ impl MLThreatDetector {
         Ok(avg_confidence)
     }
 
-    async fn update_training_data(&mut self, features: Vec<f64>, threat_score: f64) -> Result<()> {
+    fn update_training_data(&self, features: Vec<f64>, threat_score: f64) -> Result<()> {
         let sample = TrainingSample {
             features,
             label: if threat_score > 0.7 {
@@ -372,7 +375,7 @@ impl MLThreatDetector {
             threat_score,
         };
 
-        self.training_data.push(sample);
+        self.training_data.lock().unwrap().push(sample);
         Ok(())
     }
 
@@ -474,11 +477,11 @@ impl MLThreatDetector {
         }
     }
 
-    pub fn get_models(&self) -> &HashMap<String, MLModel> {
-        &self.models
+    pub fn get_models(&self) -> HashMap<String, MLModel> {
+        self.models.lock().unwrap().clone()
     }
 
-    pub fn get_training_data(&self) -> &[TrainingSample] {
-        &self.training_data
+    pub fn get_training_data(&self) -> Vec<TrainingSample> {
+        self.training_data.lock().unwrap().clone()
     }
 }

@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use sysinfo::System;
 use tokio::sync::RwLock;
 
 // Modules are now imported from crate::modules
@@ -39,7 +40,7 @@ use forensic_capture::ForensicCapture;
 use memory_forensics::{MemoryAnalysisResult, MemoryForensics};
 use ml_threat_detection::{MLThreatDetector, MLThreatResult};
 use monitoring::SecurityMonitor;
-use network_analysis::{NetworkAnalysisResult, NetworkAnalyzer};
+use network_analysis::{NetworkAnalysisResult, NetworkAnalyzer, NetworkMonitorEvent};
 use response_automation::ResponseAutomation;
 use threat_detection::{ThreatDetector, ThreatScore};
 
@@ -226,6 +227,15 @@ pub struct SecurityManager {
     ml_threat_detector: MLThreatDetector,
     security_monitor: SecurityMonitor,
     active: bool,
+    event_listeners: Arc<RwLock<Vec<Box<dyn Fn(String) + Send + Sync>>>>,
+}
+
+impl std::fmt::Debug for SecurityManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SecurityManager")
+            .field("active", &self.active)
+            .finish()
+    }
 }
 
 impl SecurityManager {
@@ -240,7 +250,7 @@ impl SecurityManager {
         let ml_threat_detector = MLThreatDetector::new()?;
         let security_monitor = SecurityMonitor::new(config.clone()).await?;
 
-        Ok(Self {
+        let instance = Self {
             _config: config,
             threat_detector,
             response_automation,
@@ -252,7 +262,162 @@ impl SecurityManager {
             ml_threat_detector,
             security_monitor,
             active: true,
-        })
+            event_listeners: Arc::new(RwLock::new(Vec::new())),
+        };
+        instance.start_realtime_monitoring();
+        Ok(instance)
+    }
+
+    fn start_realtime_monitoring(&self) {
+        let listeners = self.event_listeners.clone();
+
+        // 1. Process Monitoring (Real)
+        let _listeners_clone = listeners.clone();
+        let ml_detector = self.ml_threat_detector.clone();
+
+        tokio::spawn(async move {
+            let mut sys = System::new_all();
+            sys.refresh_all();
+            let mut initial_pids: std::collections::HashSet<_> =
+                sys.processes().keys().cloned().collect();
+
+            // Initial population log
+            {
+                let guard = _listeners_clone.read().await;
+                for listener in guard.iter() {
+                    listener(format!(
+                        "[PROC] Initialized monitoring for {} processes",
+                        initial_pids.len()
+                    ));
+                }
+            }
+
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                sys.refresh_processes();
+
+                let current_pids: std::collections::HashSet<_> =
+                    sys.processes().keys().cloned().collect();
+
+                // Check for new processes
+                for pid in current_pids.difference(&initial_pids) {
+                    if let Some(process) = sys.process(*pid) {
+                        let cmd = process.cmd().join(" ");
+                        let user = process
+                            .user_id()
+                            .map(|u| u.to_string())
+                            .unwrap_or("unknown".to_string());
+
+                        let msg = format!("[PROC] New Process: {} (PID: {})", process.name(), pid);
+                        {
+                            let guard = _listeners_clone.read().await;
+                            for listener in guard.iter() {
+                                listener(msg.clone());
+                            }
+                        }
+
+                        // ML Analysis
+                        let event = SecurityEvent::CommandExecution {
+                            command: cmd.clone(),
+                            user: user.clone(),
+                            timestamp: std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs(),
+                            success: true,
+                        };
+
+                        if let Ok(ml_result) = ml_detector.analyze_threat(&event) {
+                            if ml_result.threat_score > 0.5 {
+                                let alert = format!("[ML] [ALERT] Suspicious Process Detected: {} (Score: {:.2}) - Patterns: {:?}", 
+                                    process.name(), ml_result.threat_score, ml_result.detected_patterns);
+                                let guard = _listeners_clone.read().await;
+                                for listener in guard.iter() {
+                                    listener(alert.clone());
+                                }
+                            } else {
+                                // Optional training log or lower priority log
+                            }
+                        }
+                    }
+                }
+
+                initial_pids = current_pids;
+            }
+        });
+
+        // 2. Network Monitoring (Real)
+        let listeners_net = listeners.clone();
+        let handle = tokio::runtime::Handle::current();
+        let ml_detector_net = self.ml_threat_detector.clone();
+
+        self.network_analyzer.monitor_traffic(move |event| {
+            let listeners = listeners_net.clone();
+            let ml = ml_detector_net.clone();
+
+            handle.spawn(async move {
+                match event {
+                    NetworkMonitorEvent::Log(msg) => {
+                        let guard = listeners.read().await;
+                        for listener in guard.iter() {
+                            listener(msg.clone());
+                        }
+                    }
+                    NetworkMonitorEvent::Alert { message, analysis } => {
+                        // Broadcast the Alert Message
+                        {
+                            let guard = listeners.read().await;
+                            for listener in guard.iter() {
+                                listener(message.clone());
+                            }
+                        }
+
+                        // Feed to ML
+                        // Use data from analysis if available
+                        let (src, dst, proto, payload) =
+                            if let Some(conn) = analysis.suspicious_connections.first() {
+                                (
+                                    conn.source_ip.clone(),
+                                    conn.dest_ip.clone(),
+                                    conn.protocol.clone(),
+                                    conn.bytes_received as u32,
+                                )
+                            } else {
+                                (
+                                    "0.0.0.0".to_string(),
+                                    "0.0.0.0".to_string(),
+                                    "UNKNOWN".to_string(),
+                                    0,
+                                )
+                            };
+
+                        let event = SecurityEvent::NetworkPacket {
+                            source_ip: src,
+                            dest_ip: dst,
+                            protocol: proto,
+                            payload_size: payload,
+                            timestamp: std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs(),
+                        };
+
+                        if let Ok(ml_result) = ml.analyze_threat(&event) {
+                            if ml_result.threat_score > 0.6 {
+                                let ml_msg = format!(
+                                    "[ML] [NET-ALERT] Enhanced Threat Confirmed (Score: {:.2})",
+                                    ml_result.threat_score
+                                );
+                                let guard = listeners.read().await;
+                                for listener in guard.iter() {
+                                    listener(ml_msg.clone());
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
     }
 
     pub async fn process_security_event(
@@ -272,7 +437,7 @@ impl SecurityManager {
         // determinism (rules).
         let behavior_pattern = self.behavioral_analyzer.analyze_behavior(&event).await?;
 
-        let ml_result = self.ml_threat_detector.analyze_threat(&event).await?;
+        let ml_result = self.ml_threat_detector.analyze_threat(&event)?;
 
         // Process event through security monitor
         self.security_monitor.process_event(&event).await?;
@@ -466,6 +631,14 @@ impl SecurityManager {
         Ok(())
     }
 
+    pub async fn register_listener<F>(&self, listener: F)
+    where
+        F: Fn(String) + Send + Sync + 'static,
+    {
+        let mut listeners = self.event_listeners.write().await;
+        listeners.push(Box::new(listener));
+    }
+
     pub async fn is_active(&self) -> bool {
         self.active
     }
@@ -483,7 +656,7 @@ impl SecurityManager {
         &mut self,
         packet_data: &[u8],
     ) -> Result<NetworkAnalysisResult> {
-        self.network_analyzer.analyze_packet(packet_data).await
+        self.network_analyzer.analyze_packet(packet_data)
     }
 
     pub async fn analyze_process_memory(&mut self, pid: i32) -> Result<MemoryAnalysisResult> {
@@ -491,7 +664,7 @@ impl SecurityManager {
     }
 
     pub async fn analyze_with_ml(&mut self, event: &SecurityEvent) -> Result<MLThreatResult> {
-        self.ml_threat_detector.analyze_threat(event).await
+        self.ml_threat_detector.analyze_threat(event)
     }
 }
 

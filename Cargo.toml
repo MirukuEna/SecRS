@@ -34,7 +34,7 @@ webpki = "0.22"
 # Machine learning for threat detection
 # rust-bert and tch removed (unused)
 # Advanced monitoring
-sysinfo = "0.29"
+sysinfo = "0.30"
 procfs = "0.15"
 # Network analysis
 pcap-parser = "0.16"
@@ -43,4 +43,6 @@ memmap2 = "0.9"
 # Advanced sandboxing
 seccomp = "0.1"
 # Network traffic analysis
-pnet_datalink = "0.34"
+# TUI dependencies
+ratatui = "0.26"
+crossterm = "0.27"
