@@ -3,6 +3,14 @@ name = "sare-security"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "sare_security"
+path = "mod.rs"
+
+[[bin]]
+name = "secrs_demo"
+path = "main.rs"
+
 [dependencies]
 anyhow = "1.0"
 tokio = { version = "1.0", features = ["full"] }
@@ -25,25 +33,15 @@ pnet = "0.34"
 rustls = "0.21"
 webpki = "0.22"
 # Machine learning for threat detection
-rust-bert = "0.21"
-tch = "0.13"
+# rust-bert and tch removed (unused)
 # Advanced monitoring
 sysinfo = "0.29"
 procfs = "0.15"
 # Network analysis
-pcap-parser = "0.100"
+pcap-parser = "0.16"
 # Memory forensics
 memmap2 = "0.9"
 # Advanced sandboxing
 seccomp = "0.1"
-# Memory protection
-mprotect = "0.1"
-# Advanced cryptography
-chacha20poly1305 = "0.10"
-x25519-dalek = "2.0"
 # Network traffic analysis
 pnet_datalink = "0.34"
-# Process monitoring
-procfs = "0.15"
-# System call monitoring
-seccomp = "0.1" 
