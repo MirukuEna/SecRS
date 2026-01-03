@@ -23,11 +23,23 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use std::sync::{Arc, Mutex};
+
+#[derive(Debug, Clone)]
+pub enum NetworkMonitorEvent {
+    Log(String),
+    Alert {
+        message: String,
+        analysis: NetworkAnalysisResult,
+    },
+}
+
+#[derive(Clone)]
 pub struct NetworkAnalyzer {
-    capture: Option<Capture<Active>>,
-    threat_patterns: Vec<NetworkThreatPattern>,
-    connection_tracker: HashMap<String, ConnectionInfo>,
-    analysis_results: Vec<NetworkAnalysisResult>,
+    capture: Arc<Mutex<Option<Capture<Active>>>>,
+    threat_patterns: Arc<Vec<NetworkThreatPattern>>,
+    connection_tracker: Arc<Mutex<HashMap<String, ConnectionInfo>>>,
+    analysis_results: Arc<Mutex<Vec<NetworkAnalysisResult>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,10 +82,10 @@ impl NetworkAnalyzer {
         let threat_patterns = Self::initialize_threat_patterns();
 
         Ok(Self {
-            capture: None,
-            threat_patterns,
-            connection_tracker: HashMap::new(),
-            analysis_results: Vec::new(),
+            capture: Arc::new(Mutex::new(None)),
+            threat_patterns: Arc::new(threat_patterns),
+            connection_tracker: Arc::new(Mutex::new(HashMap::new())),
+            analysis_results: Arc::new(Mutex::new(Vec::new())),
         })
     }
 
@@ -88,11 +100,127 @@ impl NetworkAnalyzer {
             .snaplen(65535)
             .open()?;
 
-        self.capture = Some(capture);
+        let mut capture_lock = self.capture.lock().unwrap();
+        *capture_lock = Some(capture);
         Ok(())
     }
 
-    pub async fn analyze_packet(&mut self, packet_data: &[u8]) -> Result<NetworkAnalysisResult> {
+    pub fn monitor_traffic<F>(&self, callback: F)
+    where
+        F: Fn(NetworkMonitorEvent) + Send + Sync + 'static,
+    {
+        let analyzer = self.clone();
+
+        std::thread::spawn(move || {
+            // Find default device
+            let device = match Device::lookup() {
+                Ok(Some(d)) => d,
+                Ok(None) => {
+                    callback(NetworkMonitorEvent::Log(
+                        "[NET] Error: No network interface found".to_string(),
+                    ));
+                    return;
+                }
+                Err(e) => {
+                    callback(NetworkMonitorEvent::Log(format!("[NET] Error: {}", e)));
+                    return;
+                }
+            };
+
+            let name = device.name.clone();
+            callback(NetworkMonitorEvent::Log(format!(
+                "[NET] Starting capture on {}",
+                name
+            )));
+
+            // Open capture
+            let cap = match Capture::from_device(device) {
+                Ok(c) => c,
+                Err(e) => {
+                    callback(NetworkMonitorEvent::Log(format!(
+                        "[NET] Error initializing capture: {}",
+                        e
+                    )));
+                    return;
+                }
+            };
+
+            let mut cap = match cap.promisc(true).snaplen(65535).timeout(1000).open() {
+                Ok(c) => c,
+                Err(e) => {
+                    callback(NetworkMonitorEvent::Log(format!(
+                        "[NET] Error opening capture: {} (Try running as root?)",
+                        e
+                    )));
+                    return;
+                }
+            };
+
+            loop {
+                match cap.next_packet() {
+                    Ok(packet) => {
+                        // Parse packet to get basic info
+                        if let Some(ipv4) = Ipv4Packet::new(packet.data) {
+                            let protocol = match ipv4.get_next_level_protocol() {
+                                IpNextHeaderProtocols::Tcp => "TCP",
+                                IpNextHeaderProtocols::Udp => "UDP",
+                                _ => "OTHER",
+                            };
+                            let src = ipv4.get_source();
+                            let dst = ipv4.get_destination();
+
+                            // Perform DPI
+                            match analyzer.analyze_packet(packet.data) {
+                                Ok(analysis) => {
+                                    if analysis.threat_score > 0.0 {
+                                        // ALERT
+                                        let msg = format!(
+                                            "[NET] [ALERT] DANGER: {} (Score: {}) - Patterns: {:?}",
+                                            analysis
+                                                .suspicious_connections
+                                                .first()
+                                                .map(|c| c.protocol.clone())
+                                                .unwrap_or("UNKNOWN".to_string()),
+                                            analysis.threat_score,
+                                            analysis.detected_patterns
+                                        );
+                                        callback(NetworkMonitorEvent::Alert {
+                                            message: msg,
+                                            analysis,
+                                        });
+                                    } else {
+                                        // Normal Log
+                                        let msg = format!(
+                                            "[NET] {} {}:? -> {}:? ({} bytes)",
+                                            protocol, src, dst, packet.header.len
+                                        );
+                                        callback(NetworkMonitorEvent::Log(msg));
+                                    }
+                                }
+                                Err(e) => {
+                                    callback(NetworkMonitorEvent::Log(format!(
+                                        "[NET] Analysis Error: {}",
+                                        e
+                                    )));
+                                }
+                            }
+                        }
+                    }
+                    Err(pcap::Error::TimeoutExpired) => {
+                        // Continue
+                    }
+                    Err(e) => {
+                        callback(NetworkMonitorEvent::Log(format!(
+                            "[NET] Capture error: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+        });
+    }
+
+    pub fn analyze_packet(&self, packet_data: &[u8]) -> Result<NetworkAnalysisResult> {
         let mut threat_score = 0.0;
         let mut suspicious_connections = Vec::new();
         let mut detected_patterns = Vec::new();
@@ -112,19 +240,17 @@ impl NetworkAnalyzer {
                             tcp_packet.get_destination()
                         );
 
-                        let connection_info = self
-                            .update_connection_info(
-                                &connection_key,
-                                &source_ip,
-                                &dest_ip,
-                                tcp_packet.get_source(),
-                                tcp_packet.get_destination(),
-                                "TCP",
-                                packet_data.len() as u64,
-                            )
-                            .await?;
+                        let connection_info = self.update_connection_info(
+                            &connection_key,
+                            &source_ip,
+                            &dest_ip,
+                            tcp_packet.get_source(),
+                            tcp_packet.get_destination(),
+                            "TCP",
+                            packet_data.len() as u64,
+                        )?;
 
-                        let (score, patterns) = self.analyze_tcp_packet(tcp_packet).await?;
+                        let (score, patterns) = self.analyze_tcp_packet(tcp_packet)?;
                         threat_score += score;
                         detected_patterns.extend(patterns);
 
@@ -143,19 +269,17 @@ impl NetworkAnalyzer {
                             udp_packet.get_destination()
                         );
 
-                        let connection_info = self
-                            .update_connection_info(
-                                &connection_key,
-                                &source_ip,
-                                &dest_ip,
-                                udp_packet.get_source(),
-                                udp_packet.get_destination(),
-                                "UDP",
-                                packet_data.len() as u64,
-                            )
-                            .await?;
+                        let connection_info = self.update_connection_info(
+                            &connection_key,
+                            &source_ip,
+                            &dest_ip,
+                            udp_packet.get_source(),
+                            udp_packet.get_destination(),
+                            "UDP",
+                            packet_data.len() as u64,
+                        )?;
 
-                        let (score, patterns) = self.analyze_udp_packet(udp_packet).await?;
+                        let (score, patterns) = self.analyze_udp_packet(udp_packet)?;
                         threat_score += score;
                         detected_patterns.extend(patterns);
 
@@ -179,13 +303,13 @@ impl NetworkAnalyzer {
                 .generate_network_recommendations(threat_score, &detected_patterns),
         };
 
-        self.analysis_results.push(result.clone());
+        self.analysis_results.lock().unwrap().push(result.clone());
         Ok(result)
     }
 
     /// Analyzes TCP traffic for high-risk ports and signature matches.
     /// Returns a tuple of (threat_score, detected_pattern_names).
-    async fn analyze_tcp_packet(&self, tcp_packet: TcpPacket<'_>) -> Result<(f64, Vec<String>)> {
+    fn analyze_tcp_packet(&self, tcp_packet: TcpPacket<'_>) -> Result<(f64, Vec<String>)> {
         let mut score = 0.0;
         let mut patterns = Vec::new();
 
@@ -208,7 +332,7 @@ impl NetworkAnalyzer {
             patterns.push("RDP traffic detected".to_string());
         }
 
-        for pattern in &self.threat_patterns {
+        for pattern in self.threat_patterns.iter() {
             if pattern.protocol == "TCP" {
                 if payload
                     .windows(pattern.payload_pattern.len())
@@ -223,7 +347,7 @@ impl NetworkAnalyzer {
         Ok((score, patterns))
     }
 
-    async fn analyze_udp_packet(&self, udp_packet: UdpPacket<'_>) -> Result<(f64, Vec<String>)> {
+    fn analyze_udp_packet(&self, udp_packet: UdpPacket<'_>) -> Result<(f64, Vec<String>)> {
         let mut score = 0.0;
         let mut patterns = Vec::new();
 
@@ -241,7 +365,7 @@ impl NetworkAnalyzer {
             patterns.push("NTP traffic detected".to_string());
         }
 
-        for pattern in &self.threat_patterns {
+        for pattern in self.threat_patterns.iter() {
             if pattern.protocol == "UDP" {
                 if payload
                     .windows(pattern.payload_pattern.len())
@@ -256,8 +380,8 @@ impl NetworkAnalyzer {
         Ok((score, patterns))
     }
 
-    async fn update_connection_info(
-        &mut self,
+    fn update_connection_info(
+        &self,
         key: &str,
         source_ip: &str,
         dest_ip: &str,
@@ -270,8 +394,8 @@ impl NetworkAnalyzer {
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs();
 
-        let connection_info = self
-            .connection_tracker
+        let mut tracker = self.connection_tracker.lock().unwrap();
+        let connection_info = tracker
             .entry(key.to_string())
             .or_insert_with(|| ConnectionInfo {
                 source_ip: source_ip.to_string(),
@@ -349,11 +473,11 @@ impl NetworkAnalyzer {
         ]
     }
 
-    pub fn get_analysis_results(&self) -> &[NetworkAnalysisResult] {
-        &self.analysis_results
+    pub fn get_analysis_results(&self) -> Vec<NetworkAnalysisResult> {
+        self.analysis_results.lock().unwrap().clone()
     }
 
-    pub fn get_connection_tracker(&self) -> &HashMap<String, ConnectionInfo> {
-        &self.connection_tracker
+    pub fn get_connection_tracker(&self) -> HashMap<String, ConnectionInfo> {
+        self.connection_tracker.lock().unwrap().clone()
     }
 }

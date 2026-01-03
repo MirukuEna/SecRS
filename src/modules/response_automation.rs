@@ -14,8 +14,8 @@
  * Author: KleaSCM
  * Email: KleaSCM@gmail.com
  */
-use crate::behavioral_analysis::BehaviorPattern;
-use crate::threat_detection::{ThreatScore, ThreatType};
+use crate::modules::behavioral_analysis::BehaviorPattern;
+use crate::modules::threat_detection::{ThreatScore, ThreatType};
 use crate::{SecurityEvent, ThreatResponseAction};
 use anyhow::Result;
 use std::sync::Arc;

@@ -25,7 +25,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 
-use super::{SecurityConfig, SecurityEvent, SecuritySeverity};
+use crate::core::manager::{SecurityConfig, SecurityEvent, SecuritySeverity};
 
 /**
  * Security alert information tracks comprehensive security events
@@ -172,6 +172,7 @@ impl SecurityMonitor {
                 description,
                 severity,
                 timestamp,
+                ..
             } => {
                 if (*severity == SecuritySeverity::High
                     && self.monitoring_config.alert_on_high_severity)
@@ -230,6 +231,9 @@ impl SecurityMonitor {
                 if self.monitoring_config.traffic_analysis {
                     // Log high volume traffic?
                 }
+            }
+            SecurityEvent::ThreatDetected { .. } | SecurityEvent::BehavioralAnomaly { .. } => {
+                // Already processed by specialized handlers
             }
             _ => {
                 self.process_general_event(event).await?;
@@ -307,6 +311,14 @@ impl SecurityMonitor {
                 protocol,
                 ..
             } => format!("pckt:{}:{}:{}", protocol, source_ip, dest_ip),
+            SecurityEvent::ThreatDetected {
+                threat_type,
+                source,
+                ..
+            } => format!("threat:{}:{}", threat_type, source),
+            SecurityEvent::BehavioralAnomaly { description, .. } => {
+                format!("anomaly:{}", description)
+            }
         };
 
         let timestamp = std::time::SystemTime::now()
@@ -388,6 +400,14 @@ impl SecurityMonitor {
                 protocol,
                 ..
             } => format!("pckt:{}:{}:{}", protocol, source_ip, dest_ip),
+            SecurityEvent::ThreatDetected {
+                threat_type,
+                source,
+                ..
+            } => format!("threat:{}:{}", threat_type, source),
+            SecurityEvent::BehavioralAnomaly { description, .. } => {
+                format!("anomaly:{}", description)
+            }
         };
 
         let timestamp = std::time::SystemTime::now()
@@ -471,29 +491,35 @@ impl SecurityMonitor {
         pattern: &ThreatPattern,
     ) -> Result<bool> {
         let event_str = match event {
-            SecurityEvent::CommandExecution { command, .. } => command,
+            SecurityEvent::CommandExecution { command, .. } => command.clone(),
             SecurityEvent::FileAccess {
                 path, operation, ..
-            } => &format!("{} {}", operation, path),
+            } => format!("{} {}", operation, path),
             SecurityEvent::NetworkAccess {
                 host,
                 port,
                 protocol,
                 ..
-            } => &format!("{}://{}:{}", protocol, host, port),
+            } => format!("{}://{}:{}", protocol, host, port),
             SecurityEvent::PermissionViolation {
                 resource,
                 operation,
                 ..
-            } => &format!("{} {}", operation, resource),
-            SecurityEvent::SecurityAlert { description, .. } => description,
-            SecurityEvent::MemoryAccess { operation, .. } => operation,
-            SecurityEvent::NetworkPacket { protocol, .. } => protocol,
+            } => format!("{} {}", operation, resource),
+            SecurityEvent::SecurityAlert { description, .. } => description.clone(),
+            SecurityEvent::MemoryAccess { operation, .. } => operation.clone(),
+            SecurityEvent::NetworkPacket { protocol, .. } => protocol.clone(),
+            SecurityEvent::ThreatDetected {
+                threat_type,
+                source,
+                ..
+            } => format!("{} {}", threat_type, source),
+            SecurityEvent::BehavioralAnomaly { description, .. } => description.clone(),
         };
 
         if !pattern.regex_pattern.is_empty() {
             if let Ok(regex) = Regex::new(&pattern.regex_pattern) {
-                if regex.is_match(event_str) {
+                if regex.is_match(&event_str) {
                     return Ok(true);
                 }
             }
@@ -520,6 +546,8 @@ impl SecurityMonitor {
                 SecurityEvent::SecurityAlert { .. } => "security_alert",
                 SecurityEvent::MemoryAccess { .. } => "memory_access",
                 SecurityEvent::NetworkPacket { .. } => "network_packet",
+                SecurityEvent::ThreatDetected { .. } => "threat_detected",
+                SecurityEvent::BehavioralAnomaly { .. } => "behavioral_anomaly",
             };
 
             let entry = anomaly_data

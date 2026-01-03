@@ -145,6 +145,8 @@ impl BehavioralAnalyzer {
             SecurityEvent::SecurityAlert { .. } => pattern == "security_alert",
             SecurityEvent::MemoryAccess { .. } => pattern == "memory_access",
             SecurityEvent::NetworkPacket { .. } => pattern == "network_packet",
+            SecurityEvent::ThreatDetected { .. } => pattern == "threat_detected",
+            SecurityEvent::BehavioralAnomaly { .. } => pattern == "behavioral_anomaly",
         }
     }
 
@@ -157,6 +159,8 @@ impl BehavioralAnalyzer {
             SecurityEvent::SecurityAlert { .. } => "system".to_string(),
             SecurityEvent::MemoryAccess { .. } => "system".to_string(),
             SecurityEvent::NetworkPacket { .. } => "system".to_string(),
+            SecurityEvent::ThreatDetected { .. } => "system".to_string(),
+            SecurityEvent::BehavioralAnomaly { user, .. } => user.clone(),
         }
     }
 
@@ -169,6 +173,8 @@ impl BehavioralAnalyzer {
             SecurityEvent::SecurityAlert { timestamp, .. } => *timestamp,
             SecurityEvent::MemoryAccess { timestamp, .. } => *timestamp,
             SecurityEvent::NetworkPacket { timestamp, .. } => *timestamp,
+            SecurityEvent::ThreatDetected { timestamp, .. } => *timestamp,
+            SecurityEvent::BehavioralAnomaly { timestamp, .. } => *timestamp,
         }
     }
 

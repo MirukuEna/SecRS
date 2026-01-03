@@ -5,11 +5,10 @@ edition = "2021"
 
 [lib]
 name = "sare_security"
-path = "mod.rs"
 
 [[bin]]
 name = "secrs_demo"
-path = "main.rs"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0"
@@ -19,6 +18,7 @@ serde_json = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1.0"
 url = "2.0"
+toml = "0.8"
 rand = "0.8"
 base64 = "0.21"
 aes-gcm = "0.10"
@@ -35,7 +35,7 @@ webpki = "0.22"
 # Machine learning for threat detection
 # rust-bert and tch removed (unused)
 # Advanced monitoring
-sysinfo = "0.29"
+sysinfo = "0.30"
 procfs = "0.15"
 # Network analysis
 pcap-parser = "0.16"
@@ -44,4 +44,6 @@ memmap2 = "0.9"
 # Advanced sandboxing
 seccomp = "0.1"
 # Network traffic analysis
-pnet_datalink = "0.34"
+# TUI dependencies
+ratatui = "0.26"
+crossterm = "0.27"

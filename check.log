@@ -1,0 +1,687 @@
+    Blocking waiting for file lock on build directory
+    Checking sare-security v0.1.0 (/home/klea/Documents/Dev/SecProj/SecRS)
+error[E0585]: found a documentation comment that doesn't document anything
+   --> src/modules/isolation.rs:376:5
+    |
+376 | /                 /**
+377 | |                  * No isolation - run normally
+378 | |                  */
+    | |___________________^
+    |
+    = help: doc comments must come before what they document, if a comment was intended use `//`
+
+error[E0585]: found a documentation comment that doesn't document anything
+   --> src/modules/isolation.rs:402:6
+    |
+402 | /                     /**
+403 | |                      * Set file size limit
+404 | |                      */
+    | |_______________________^
+    |
+    = help: doc comments must come before what they document, if a comment was intended use `//`
+
+error[E0585]: found a documentation comment that doesn't document anything
+   --> src/modules/isolation.rs:455:6
+    |
+455 | /                     /**
+456 | |                      * Set process limit
+457 | |                      */
+    | |_______________________^
+    |
+    = help: doc comments must come before what they document, if a comment was intended use `//`
+
+error[E0585]: found a documentation comment that doesn't document anything
+   --> src/modules/isolation.rs:514:6
+    |
+514 | /                     /**
+515 | |                      * Set core dump limit to 0
+516 | |                      */
+    | |_______________________^
+    |
+    = help: doc comments must come before what they document, if a comment was intended use `//`
+
+error[E0412]: cannot find type `SeccompFilter` in this scope
+   --> src/modules/sandbox.rs:170:38
+    |
+170 |     seccomp_filters: HashMap<String, SeccompFilter>,
+    |                                      ^^^^^^^^^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+165 | pub struct SandboxManager<SeccompFilter> {
+    |                          +++++++++++++++
+
+error[E0422]: cannot find struct, variant or union type `Rlimit` in this scope
+   --> src/modules/sandbox.rs:251:25
+    |
+251 |         let cpu_limit = Rlimit {
+    |                         ^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `Rlimit` in this scope
+   --> src/modules/sandbox.rs:257:28
+    |
+257 |         let memory_limit = Rlimit {
+    |                            ^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `Rlimit` in this scope
+   --> src/modules/sandbox.rs:263:31
+    |
+263 |         let file_size_limit = Rlimit {
+    |                               ^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `Rlimit` in this scope
+   --> src/modules/sandbox.rs:269:29
+    |
+269 |         let process_limit = Rlimit {
+    |                             ^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `Rlimit` in this scope
+   --> src/modules/sandbox.rs:275:32
+    |
+275 |         let open_files_limit = Rlimit {
+    |                                ^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `SeccompFilter` in this scope
+   --> src/modules/sandbox.rs:585:56
+    |
+585 |     fn initialize_seccomp_filters() -> HashMap<String, SeccompFilter> {
+    |                                                        ^^^^^^^^^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+174 | impl<SeccompFilter> SandboxManager {
+    |     +++++++++++++++
+
+warning: unused import: `crate::modules::encryption`
+  --> src/core/manager.rs:27:5
+   |
+27 | use crate::modules::encryption;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `DateTime` and `Local`
+  --> src/core/permissions.rs:14:14
+   |
+14 | use chrono::{DateTime, Datelike, Local, Timelike};
+   |              ^^^^^^^^            ^^^^^
+
+warning: unused imports: `SecurityEvent` and `SecuritySeverity`
+  --> src/core/permissions.rs:21:44
+   |
+21 | use crate::core::manager::{SecurityConfig, SecurityEvent, SecuritySeverity};
+   |                                            ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SecurityEvent` and `SecuritySeverity`
+  --> src/core/validation.rs:23:44
+   |
+23 | use crate::core::manager::{SecurityConfig, SecurityEvent, SecuritySeverity};
+   |                                            ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SecurityEvent` and `SecuritySeverity`
+  --> src/modules/isolation.rs:22:44
+   |
+22 | use crate::core::manager::{SecurityConfig, SecurityEvent, SecuritySeverity};
+   |                                            ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^
+
+warning: unused doc comment
+  --> src/modules/isolation.rs:84:23
+   |
+84 |             max_cpu_usage: 50, /** 50% */
+   |                                ^^^^^^^^^^
+85 |             max_memory_usage: 512 * 1024 * 1024, /** 512MB */
+   |             ----------------------------------- rustdoc does not generate documentation for expression fields
+   |
+   = help: use `/* */` for a plain comment
+   = note: `#[warn(unused_doc_comments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused doc comment
+  --> src/modules/isolation.rs:85:41
+   |
+85 |             max_memory_usage: 512 * 1024 * 1024, /** 512MB */
+   |                                                  ^^^^^^^^^^^^
+86 |             max_disk_usage: 1024 * 1024 * 1024, /** 1GB */
+   |             ---------------------------------- rustdoc does not generate documentation for expression fields
+   |
+   = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+  --> src/modules/isolation.rs:86:40
+   |
+86 |             max_disk_usage: 1024 * 1024 * 1024, /** 1GB */
+   |                                                 ^^^^^^^^^^
+87 |             max_network_bandwidth: 1024 * 1024, /** 1MB/s */
+   |             ---------------------------------- rustdoc does not generate documentation for expression fields
+   |
+   = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:87:40
+    |
+ 87 |               max_network_bandwidth: 1024 * 1024, /** 1MB/s */
+    |                                                   ^^^^^^^^^^^^
+ 88 | /             allowed_syscalls: vec![
+ 89 | |                 "read".to_string(), "write".to_string(), "open".to_string(),
+ 90 | |                 "close".to_string(), "stat".to_string(), "lstat".to_string(),
+ 91 | |                 "fstat".to_string(), "access".to_string(), "chdir".to_string(),
+...   |
+199 | |                 "futex_waitv".to_string(), "set_mempolicy_home_node".to_string(),
+200 | |             ],
+    | |_____________- rustdoc does not generate documentation for expression fields
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:308:3
+    |
+308 | /         /**
+309 | |          * Initializes the isolation manager
+310 | |          * 
+311 | |          * Creates an isolation manager with the specified settings,
+...   |
+317 | |          * process execution environment.
+318 | |          */
+    | |___________^
+319 |           
+320 | /         Ok(Self {
+321 | |             config,
+322 | |             isolation_config: IsolationConfig::default(),
+323 | |             processes: Arc::new(RwLock::new(HashMap::new())),
+324 | |             active: true,
+325 | |         })
+    | |__________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:336:3
+    |
+336 | /         /**
+337 | |          * Creates an isolated process
+338 | |          * 
+339 | |          * Executes the specified command with the specified isolation level,
+...   |
+355 | |          * Parse command into executable and arguments
+356 | |          */
+    | |___________^
+357 |           let parts: Vec<&str> = command.split_whitespace().collect();
+    |           ------------------------------------------------------------ rustdoc does not generate documentation for statements
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:365:3
+    |
+365 | /         /**
+366 | |          * Create child process with isolation
+367 | |          */
+    | |___________^
+368 |           let mut child = std::process::Command::new(executable);
+    |           ------------------------------------------------------- rustdoc does not generate documentation for statements
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:371:3
+    |
+371 | /         /**
+372 | |          * Apply isolation based on level
+373 | |          */
+    | |___________^
+374 | /         match isolation_level {
+375 | |             IsolationLevel::None => {
+376 | |                 /**
+377 | |                  * No isolation - run normally
+...   |
+520 | |         }
+    | |_________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:381:5
+    |
+381 | /                 /**
+382 | |                  * Basic isolation - set resource limits
+383 | |                  */
+    | |___________________^
+384 |                   child.env("SARE_ISOLATION", "basic");
+    |                   ------------------------------------ rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:386:5
+    |
+386 | /                 /**
+387 | |                  * Set resource limits
+388 | |                  */
+    | |___________________^
+389 | /                 unsafe {
+390 | |                     use nix::sys::resource::{setrlimit, Resource};
+391 | |                     
+392 | |                     /**
+...   |
+406 | |                 }
+    | |_________________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused imports: `Resource` and `setrlimit`
+   --> src/modules/isolation.rs:390:31
+    |
+390 |                     use nix::sys::resource::{setrlimit, Resource};
+    |                                              ^^^^^^^^^  ^^^^^^^^
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:409:5
+    |
+409 | /                 /**
+410 | |                  * Enhanced isolation - namespace isolation
+411 | |                  */
+    | |___________________^
+412 |                   child.env("SARE_ISOLATION", "enhanced");
+    |                   --------------------------------------- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:414:5
+    |
+414 | /                 /**
+415 | |                  * Create new namespaces
+416 | |                  */
+    | |___________________^
+417 | /                 unsafe {
+418 | |                     use nix::unistd::{Uid, Gid, setuid, setgid};
+419 | |                     use nix::sched::CloneFlags;
+420 | |                     use libc::{uid_t, gid_t};
+...   |
+431 | |                     setgid(Gid::from_raw(1000))?;
+432 | |                 }
+    | |_________________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused imports: `gid_t` and `uid_t`
+   --> src/modules/isolation.rs:420:17
+    |
+420 |                     use libc::{uid_t, gid_t};
+    |                                ^^^^^  ^^^^^
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:422:6
+    |
+422 | /                     /**
+423 | |                      * Unshare namespaces
+424 | |                      */
+    | |_______________________^
+425 |                       unshare(CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNET)?;
+    |                       --------------------------------------------------------------------------------------- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:427:6
+    |
+427 | /                     /**
+428 | |                      * Set user/group isolation
+429 | |                      */
+    | |_______________________^
+430 |                       setuid(Uid::from_raw(1000))?;
+    |                       ---------------------------- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:434:5
+    |
+434 | /                 /**
+435 | |                  * Set enhanced resource limits
+436 | |                  */
+    | |___________________^
+437 | /                 unsafe {
+438 | |                     use nix::sys::resource::{setrlimit, Resource};
+439 | |                     
+440 | |                     /**
+...   |
+459 | |                 }
+    | |_________________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused imports: `Resource` and `setrlimit`
+   --> src/modules/isolation.rs:438:31
+    |
+438 |                     use nix::sys::resource::{setrlimit, Resource};
+    |                                              ^^^^^^^^^  ^^^^^^^^
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:462:5
+    |
+462 | /                 /**
+463 | |                  * Maximum isolation - complete sandbox
+464 | |                  */
+    | |___________________^
+465 |                   child.env("SARE_ISOLATION", "maximum");
+    |                   -------------------------------------- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:467:5
+    |
+467 | /                 /**
+468 | |                  * Create all namespaces
+469 | |                  */
+    | |___________________^
+470 | /                 unsafe {
+471 | |                     use nix::unistd::{Uid, Gid, setuid, setgid};
+472 | |                     use nix::sched::CloneFlags;
+473 | |                     use libc::{uid_t, gid_t};
+...   |
+485 | |                     setgid(Gid::from_raw(1001))?;
+486 | |                 }
+    | |_________________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused imports: `gid_t` and `uid_t`
+   --> src/modules/isolation.rs:473:17
+    |
+473 |                     use libc::{uid_t, gid_t};
+    |                                ^^^^^  ^^^^^
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:475:6
+    |
+475 | /                     /**
+476 | |                      * Unshare all namespaces
+477 | |                      */
+    | |_______________________^
+478 | /                     unshare(CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNET | 
+479 | |                             CloneFlags::CLONE_NEWUTS | CloneFlags::CLONE_NEWIPC)?;
+    | |_________________________________________________________________________________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:481:6
+    |
+481 | /                     /**
+482 | |                      * Set strict user/group isolation
+483 | |                      */
+    | |_______________________^
+484 |                       setuid(Uid::from_raw(1001))?;
+    |                       ---------------------------- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:488:5
+    |
+488 | /                 /**
+489 | |                  * Set maximum resource limits
+490 | |                  */
+    | |___________________^
+491 | /                 unsafe {
+492 | |                     use nix::sys::resource::{setrlimit, Resource};
+493 | |                     
+494 | |                     /**
+...   |
+518 | |                 }
+    | |_________________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused imports: `Resource` and `setrlimit`
+   --> src/modules/isolation.rs:492:31
+    |
+492 |                     use nix::sys::resource::{setrlimit, Resource};
+    |                                              ^^^^^^^^^  ^^^^^^^^
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:522:3
+    |
+522 | /         /**
+523 | |          * Spawn the isolated process
+524 | |          */
+    | |___________^
+525 |           let child_process = child.spawn()?;
+    |           ----------------------------------- rustdoc does not generate documentation for statements
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:528:3
+    |
+528 | /         /**
+529 | |          * Create isolated process info
+530 | |          */
+    | |___________^
+531 | /         let process = IsolatedProcess {
+532 | |             pid,
+533 | |             isolation_level,
+534 | |             cpu_usage: 0.0,
+...   |
+541 | |             status: ProcessStatus::Running,
+542 | |         };
+    | |__________- rustdoc does not generate documentation for statements
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused doc comment
+   --> src/modules/isolation.rs:544:3
+    |
+544 | /         /**
+545 | |          * Store process info
+546 | |          */
+    | |___________^
+547 | /         {
+548 | |             let mut processes = self.processes.write().await;
+549 | |             processes.insert(pid, process);
+550 | |         }
+    | |_________- rustdoc does not generate documentation for expressions
+    |
+    = help: use `/* */` for a plain comment
+
+warning: unused imports: `gid_t` and `uid_t`
+  --> src/modules/sandbox.rs:14:12
+   |
+14 | use libc::{gid_t, uid_t};
+   |            ^^^^^  ^^^^^
+
+warning: unused import: `nix::sched::unshare`
+  --> src/modules/sandbox.rs:15:5
+   |
+15 | use nix::sched::unshare;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `nix::sched::CloneFlags`
+  --> src/modules/sandbox.rs:16:5
+   |
+16 | use nix::sched::CloneFlags;
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Resource` and `setrlimit`
+  --> src/modules/sandbox.rs:17:26
+   |
+17 | use nix::sys::resource::{setrlimit, Resource};
+   |                          ^^^^^^^^^  ^^^^^^^^
+
+warning: unused imports: `setgid` and `setuid`
+  --> src/modules/sandbox.rs:18:19
+   |
+18 | use nix::unistd::{setgid, setuid};
+   |                   ^^^^^^  ^^^^^^
+
+warning: unused import: `SecurityEvent`
+  --> src/modules/sandbox.rs:27:44
+   |
+27 | use crate::core::manager::{SecurityConfig, SecurityEvent, SecuritySeverity};
+   |                                            ^^^^^^^^^^^^^
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompRule`
+   --> src/modules/sandbox.rs:288:24
+    |
+288 |             rules.push(SeccompRule::new(
+    |                        ^^^^^^^^^^^ use of undeclared type `SeccompRule`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:291:17
+    |
+291 |                 SeccompAction::Allow,
+    |                 ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompRule`
+   --> src/modules/sandbox.rs:296:24
+    |
+296 |             rules.push(SeccompRule::new(
+    |                        ^^^^^^^^^^^ use of undeclared type `SeccompRule`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:299:17
+    |
+299 |                 SeccompAction::Kill,
+    |                 ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompFilter`
+   --> src/modules/sandbox.rs:303:22
+    |
+303 |         let filter = SeccompFilter::new(rules, SeccompAction::Kill)?;
+    |                      ^^^^^^^^^^^^^ use of undeclared type `SeccompFilter`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:303:48
+    |
+303 |         let filter = SeccompFilter::new(rules, SeccompAction::Kill)?;
+    |                                                ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompRule`
+   --> src/modules/sandbox.rs:589:13
+    |
+589 |             SeccompRule::new(libc::SYS_read, vec![], SeccompAction::Allow),
+    |             ^^^^^^^^^^^ use of undeclared type `SeccompRule`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:589:54
+    |
+589 |             SeccompRule::new(libc::SYS_read, vec![], SeccompAction::Allow),
+    |                                                      ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompRule`
+   --> src/modules/sandbox.rs:590:13
+    |
+590 |             SeccompRule::new(libc::SYS_write, vec![], SeccompAction::Allow),
+    |             ^^^^^^^^^^^ use of undeclared type `SeccompRule`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:590:55
+    |
+590 |             SeccompRule::new(libc::SYS_write, vec![], SeccompAction::Allow),
+    |                                                       ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompRule`
+   --> src/modules/sandbox.rs:591:13
+    |
+591 |             SeccompRule::new(libc::SYS_exit, vec![], SeccompAction::Allow),
+    |             ^^^^^^^^^^^ use of undeclared type `SeccompRule`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:591:54
+    |
+591 |             SeccompRule::new(libc::SYS_exit, vec![], SeccompAction::Allow),
+    |                                                      ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompFilter`
+   --> src/modules/sandbox.rs:594:29
+    |
+594 |         if let Ok(filter) = SeccompFilter::new(basic_rules, SeccompAction::Kill) {
+    |                             ^^^^^^^^^^^^^ use of undeclared type `SeccompFilter`
+
+error[E0433]: failed to resolve: use of undeclared type `SeccompAction`
+   --> src/modules/sandbox.rs:594:61
+    |
+594 |         if let Ok(filter) = SeccompFilter::new(basic_rules, SeccompAction::Kill) {
+    |                                                             ^^^^^^^^^^^^^ use of undeclared type `SeccompAction`
+
+warning: unused variable: `log_entries`
+   --> src/core/audit.rs:320:13
+    |
+320 |         let log_entries = self.log_entries.clone();
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_log_entries`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `log_writer`
+   --> src/core/audit.rs:322:13
+    |
+322 |         let log_writer = self.log_writer.clone();
+    |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_log_writer`
+
+warning: unused variable: `user`
+   --> src/core/permissions.rs:455:9
+    |
+455 |         user: &str,
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_user`
+
+warning: unused variable: `operation`
+   --> src/core/permissions.rs:356:9
+    |
+356 |         operation: &str,
+    |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_operation`
+
+warning: unused variable: `protocol`
+   --> src/core/permissions.rs:389:9
+    |
+389 |         protocol: &str,
+    |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_protocol`
+
+warning: unnecessary `unsafe` block
+   --> src/modules/isolation.rs:389:5
+    |
+389 |                 unsafe {
+    |                 ^^^^^^ unnecessary `unsafe` block
+    |
+    = note: `#[warn(unused_unsafe)]` (part of `#[warn(unused)]`) on by default
+
+warning: unnecessary `unsafe` block
+   --> src/modules/isolation.rs:417:5
+    |
+417 |                 unsafe {
+    |                 ^^^^^^ unnecessary `unsafe` block
+
+warning: unnecessary `unsafe` block
+   --> src/modules/isolation.rs:437:5
+    |
+437 |                 unsafe {
+    |                 ^^^^^^ unnecessary `unsafe` block
+
+warning: unnecessary `unsafe` block
+   --> src/modules/isolation.rs:470:5
+    |
+470 |                 unsafe {
+    |                 ^^^^^^ unnecessary `unsafe` block
+
+warning: unnecessary `unsafe` block
+   --> src/modules/isolation.rs:491:5
+    |
+491 |                 unsafe {
+    |                 ^^^^^^ unnecessary `unsafe` block
+
+warning: unused variable: `pid`
+   --> src/modules/sandbox.rs:309:45
+    |
+309 |     async fn setup_memory_protection(&self, pid: u32) -> Result<()> {
+    |                                             ^^^ help: if this is intentional, prefix it with an underscore: `_pid`
+
+warning: unused variable: `config_guard`
+   --> src/modules/sandbox.rs:481:13
+    |
+481 |         let config_guard = config.read().await;
+    |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_config_guard`
+
+Some errors have detailed explanations: E0412, E0422, E0433, E0585.
+For more information about an error, try `rustc --explain E0412`.
+warning: `sare-security` (lib) generated 51 warnings
+error: could not compile `sare-security` (lib) due to 25 previous errors; 51 warnings emitted
