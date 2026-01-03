@@ -1,0 +1,47 @@
+# General Security Settings
+sandbox_enabled = true
+validation_enabled = true
+audit_enabled = true
+permissions_enabled = true
+encryption_enabled = true
+isolation_enabled = true
+monitoring_enabled = true
+max_file_size = 104857600
+allowed_extensions = ["txt", "md", "rs", "toml"]
+blocked_commands = ["rm -rf", "dd if="]
+allowed_ports = [80, 443, 22]
+log_level = "Standard"
+audit_log_path = "/var/log/sare_security.log"
+encryption_key_path = "/etc/sare/keys"
+
+[threat_response]
+automatic_response_enabled = true
+silent_shutdown_enabled = true
+process_termination_enabled = true
+network_isolation_enabled = true
+response_thresholds = {}
+response_actions = ["Log", "Alert"]
+
+[behavioral_analysis]
+behavioral_analysis_enabled = true
+window_size = 300
+suspicious_patterns = ["sudo", "su", "ncat", "netcat", "nc"]
+anomaly_sensitivity = 0.7
+
+[network_monitoring]
+network_monitoring_enabled = true
+blocked_ips = ["192.168.1.100"]
+suspicious_patterns = ["malware", "exploit", "SSH-2.0", "MALW"]
+traffic_analysis = true
+
+[memory_forensics]
+memory_forensics_enabled = true
+scan_interval = 300
+suspicious_processes = ["malware", "backdoor"]
+memory_threshold = 1073741824
+
+[ml_detection]
+ml_detection_enabled = true
+model_update_interval = 3600
+confidence_threshold = 0.8
+training_enabled = true

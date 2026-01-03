@@ -9,7 +9,11 @@ async fn main() -> anyhow::Result<()> {
     println!("==================================================");
 
     // Initialize Configuration
-    let config = Arc::new(RwLock::new(SecurityConfig::default()));
+    let config_data = SecurityConfig::load("config.toml").unwrap_or_else(|e| {
+        eprintln!("Failed to load config: {}. Using default.", e);
+        SecurityConfig::default()
+    });
+    let config = Arc::new(RwLock::new(config_data));
     let manager = Arc::new(RwLock::new(SecurityManager::new(config.clone()).await?));
 
     // Run TUI

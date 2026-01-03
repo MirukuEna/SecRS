@@ -679,7 +679,12 @@ impl Default for SecurityConfig {
             isolation_enabled: true,
             monitoring_enabled: true,
             max_file_size: 100 * 1024 * 1024,
-            allowed_extensions: vec!["txt".to_string(), "md".to_string(), "rs".to_string()],
+            allowed_extensions: vec![
+                "txt".to_string(),
+                "md".to_string(),
+                "rs".to_string(),
+                "toml".to_string(),
+            ],
             blocked_commands: vec!["rm -rf".to_string(), "dd if=".to_string()],
             allowed_ports: vec![80, 443, 22],
             log_level: SecurityLogLevel::Standard,
@@ -691,6 +696,14 @@ impl Default for SecurityConfig {
             memory_forensics: MemoryForensicsConfig::default(),
             ml_detection: MLDetectionConfig::default(),
         }
+    }
+}
+
+impl SecurityConfig {
+    pub fn load(path: &str) -> Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        let config: SecurityConfig = toml::from_str(&content)?;
+        Ok(config)
     }
 }
 
