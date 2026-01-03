@@ -1,0 +1,49 @@
+[package]
+name = "sare-security"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+regex = "1.0"
+url = "2.0"
+rand = "0.8"
+base64 = "0.21"
+aes-gcm = "0.10"
+nix = "0.26"
+libc = "0.2"
+# Advanced security dependencies
+ring = "0.17"
+sha2 = "0.10"
+hmac = "0.12"
+pcap = "1.0"
+pnet = "0.34"
+rustls = "0.21"
+webpki = "0.22"
+# Machine learning for threat detection
+rust-bert = "0.21"
+tch = "0.13"
+# Advanced monitoring
+sysinfo = "0.29"
+procfs = "0.15"
+# Network analysis
+pcap-parser = "0.100"
+# Memory forensics
+memmap2 = "0.9"
+# Advanced sandboxing
+seccomp = "0.1"
+# Memory protection
+mprotect = "0.1"
+# Advanced cryptography
+chacha20poly1305 = "0.10"
+x25519-dalek = "2.0"
+# Network traffic analysis
+pnet_datalink = "0.34"
+# Process monitoring
+procfs = "0.15"
+# System call monitoring
+seccomp = "0.1" 
