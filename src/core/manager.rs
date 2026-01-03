@@ -21,16 +21,17 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-pub mod behavioral_analysis;
-pub mod deception_system;
-pub mod encryption;
-pub mod forensic_capture;
-pub mod memory_forensics;
-pub mod ml_threat_detection;
-pub mod monitoring;
-pub mod network_analysis;
-pub mod response_automation;
-pub mod threat_detection;
+// Modules are now imported from crate::modules
+use crate::modules::behavioral_analysis;
+use crate::modules::deception_system;
+// use crate::modules::encryption;
+use crate::modules::forensic_capture;
+use crate::modules::memory_forensics;
+use crate::modules::ml_threat_detection;
+use crate::modules::monitoring;
+use crate::modules::network_analysis;
+use crate::modules::response_automation;
+use crate::modules::threat_detection;
 
 use behavioral_analysis::BehavioralAnalyzer;
 use deception_system::DeceptionSystem;
@@ -167,6 +168,20 @@ pub enum SecurityEvent {
         description: String,
         severity: SecuritySeverity,
         timestamp: u64,
+        attack_vector: String,
+        response_action: Option<String>,
+    },
+    ThreatDetected {
+        source: String,
+        threat_type: String,
+        severity: SecuritySeverity,
+        timestamp: u64,
+    },
+    BehavioralAnomaly {
+        user: String,
+        description: String,
+        severity: SecuritySeverity,
+        timestamp: u64,
     },
     MemoryAccess {
         pid: i32,
@@ -189,6 +204,14 @@ pub enum SecuritySeverity {
     Medium,
     High,
     Critical,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityViolation {
+    pub violation_type: String,
+    pub description: String,
+    pub timestamp: u64,
+    pub severity: SecuritySeverity,
 }
 
 pub struct SecurityManager {

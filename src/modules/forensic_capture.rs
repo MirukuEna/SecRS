@@ -84,6 +84,9 @@ impl ForensicCapture {
             SecurityEvent::NetworkPacket { .. } => {
                 self.capture_network_evidence().await?;
             }
+            SecurityEvent::ThreatDetected { .. } | SecurityEvent::BehavioralAnomaly { .. } => {
+                // Metadata only
+            }
         }
 
         Ok(())

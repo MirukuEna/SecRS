@@ -185,6 +185,10 @@ impl ThreatDetector {
                 score += 0.3;
                 factors.push("network_packet".to_string());
             }
+            SecurityEvent::ThreatDetected { .. } | SecurityEvent::BehavioralAnomaly { .. } => {
+                score += 0.5;
+                factors.push("derived_threat".to_string());
+            }
         }
 
         Ok(ThreatScore {
@@ -231,6 +235,9 @@ impl ThreatDetector {
             SecurityEvent::SecurityAlert { .. } => Ok(ThreatType::SuspiciousActivity),
             SecurityEvent::MemoryAccess { .. } => Ok(ThreatType::SuspiciousActivity),
             SecurityEvent::NetworkPacket { .. } => Ok(ThreatType::NetworkAttack),
+            SecurityEvent::ThreatDetected { .. } | SecurityEvent::BehavioralAnomaly { .. } => {
+                Ok(ThreatType::SuspiciousActivity)
+            }
         }
     }
 

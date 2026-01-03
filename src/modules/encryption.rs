@@ -23,7 +23,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
 
-use super::SecurityConfig;
+use crate::core::manager::SecurityConfig;
 
 /**
  * Encryption algorithms

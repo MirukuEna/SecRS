@@ -5,11 +5,10 @@ edition = "2021"
 
 [lib]
 name = "sare_security"
-path = "mod.rs"
 
 [[bin]]
 name = "secrs_demo"
-path = "main.rs"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0"

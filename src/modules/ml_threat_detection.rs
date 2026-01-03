@@ -180,6 +180,7 @@ impl MLThreatDetector {
                 description,
                 severity,
                 timestamp,
+                ..
             } => {
                 features.push(alert_type.len() as f64);
                 features.push(description.len() as f64);
@@ -209,6 +210,10 @@ impl MLThreatDetector {
                 features.push(protocol.len() as f64);
                 features.push(*payload_size as f64);
                 features.push(*timestamp as f64);
+            }
+            crate::SecurityEvent::ThreatDetected { .. }
+            | crate::SecurityEvent::BehavioralAnomaly { .. } => {
+                // Derived events don't have raw features
             }
         }
 
