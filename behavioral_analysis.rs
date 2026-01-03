@@ -78,20 +78,20 @@ impl BehavioralAnalyzer {
 
 	pub async fn analyze_behavior(&mut self, event: &SecurityEvent) -> Result<BehaviorPattern> {
 		let user = self.extract_user_from_event(event);
-		let timestamp = self.extract_timestamp_from_event(event);
+		let timestamp = Self::extract_timestamp_from_event(event);
 
 		let user_events = self.user_patterns.entry(user.clone()).or_insert_with(Vec::new);
 		user_events.push(event.clone());
 
 		// Remove old events outside analysis window
 		user_events.retain(|e| {
-			let event_time = self.extract_timestamp_from_event(e);
+			let event_time = Self::extract_timestamp_from_event(e);
 			timestamp - event_time < self.analysis_window
 		});
 
 		// Analyze for behavioral patterns
 		for rule in &self.behavior_rules {
-			if let Some(pattern) = self.detect_behavior_pattern(user_events, rule).await? {
+			if let Some(pattern) = Self::detect_behavior_pattern(user_events, rule).await? {
 				return Ok(pattern);
 			}
 		}
@@ -105,9 +105,9 @@ impl BehavioralAnalyzer {
 		})
 	}
 
-	async fn detect_behavior_pattern(&self, events: &[SecurityEvent], rule: &BehaviorRule) -> Result<Option<BehaviorPattern>> {
+	async fn detect_behavior_pattern(events: &[SecurityEvent], rule: &BehaviorRule) -> Result<Option<BehaviorPattern>> {
 		let matching_events: Vec<&SecurityEvent> = events.iter()
-			.filter(|e| self.event_matches_pattern(e, &rule.pattern))
+			.filter(|e| Self::event_matches_pattern(e, &rule.pattern))
 			.collect();
 
 		if matching_events.len() >= rule.threshold as usize {
@@ -122,7 +122,7 @@ impl BehavioralAnalyzer {
 		Ok(None)
 	}
 
-	fn event_matches_pattern(&self, event: &SecurityEvent, pattern: &str) -> bool {
+	fn event_matches_pattern(event: &SecurityEvent, pattern: &str) -> bool {
 		match event {
 			SecurityEvent::CommandExecution { command, .. } => {
 				pattern == "command_execution" || command.contains(pattern)
@@ -139,6 +139,12 @@ impl BehavioralAnalyzer {
 			SecurityEvent::SecurityAlert { .. } => {
 				pattern == "security_alert"
 			}
+			SecurityEvent::MemoryAccess { .. } => {
+				pattern == "memory_access"
+			}
+			SecurityEvent::NetworkPacket { .. } => {
+				pattern == "network_packet"
+			}
 		}
 	}
 
@@ -149,16 +155,20 @@ impl BehavioralAnalyzer {
 			SecurityEvent::NetworkAccess { user, .. } => user.clone(),
 			SecurityEvent::PermissionViolation { user, .. } => user.clone(),
 			SecurityEvent::SecurityAlert { .. } => "system".to_string(),
+			SecurityEvent::MemoryAccess { .. } => "system".to_string(),
+			SecurityEvent::NetworkPacket { .. } => "system".to_string(),
 		}
 	}
 
-	fn extract_timestamp_from_event(&self, event: &SecurityEvent) -> u64 {
+	fn extract_timestamp_from_event(event: &SecurityEvent) -> u64 {
 		match event {
 			SecurityEvent::CommandExecution { timestamp, .. } => *timestamp,
 			SecurityEvent::FileAccess { timestamp, .. } => *timestamp,
 			SecurityEvent::NetworkAccess { timestamp, .. } => *timestamp,
 			SecurityEvent::PermissionViolation { timestamp, .. } => *timestamp,
 			SecurityEvent::SecurityAlert { timestamp, .. } => *timestamp,
+			SecurityEvent::MemoryAccess { timestamp, .. } => *timestamp,
+			SecurityEvent::NetworkPacket { timestamp, .. } => *timestamp,
 		}
 	}
 

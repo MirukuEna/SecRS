@@ -158,7 +158,7 @@ impl NetworkAnalyzer {
 				.as_secs(),
 			threat_score,
 			suspicious_connections,
-			detected_patterns,
+			detected_patterns: detected_patterns.clone(),
 			recommendations: self.generate_network_recommendations(threat_score, &detected_patterns),
 		};
 
@@ -166,7 +166,7 @@ impl NetworkAnalyzer {
 		Ok(result)
 	}
 
-	async fn analyze_tcp_packet(&self, tcp_packet: TcpPacket) -> Result<(f64, Vec<String>)> {
+	async fn analyze_tcp_packet(&self, tcp_packet: TcpPacket<'_>) -> Result<(f64, Vec<String>)> {
 		let mut score = 0.0;
 		let mut patterns = Vec::new();
 
@@ -201,7 +201,7 @@ impl NetworkAnalyzer {
 		Ok((score, patterns))
 	}
 
-	async fn analyze_udp_packet(&self, udp_packet: UdpPacket) -> Result<(f64, Vec<String>)> {
+	async fn analyze_udp_packet(&self, udp_packet: UdpPacket<'_>) -> Result<(f64, Vec<String>)> {
 		let mut score = 0.0;
 		let mut patterns = Vec::new();
 

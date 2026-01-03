@@ -98,7 +98,7 @@ impl ThreatDetector {
 	}
 
 	pub async fn analyze_threat(&self, event: &SecurityEvent) -> Result<ThreatScore> {
-		let mut score = 0.0;
+		let mut score: f64 = 0.0;
 		let mut factors = Vec::new();
 
 		match event {
@@ -139,7 +139,7 @@ impl ThreatDetector {
 					score += 0.9;
 					factors.push("malicious_host".to_string());
 				}
-				if port == 22 || port == 23 || port == 3389 {
+				if *port == 22 || *port == 23 || *port == 3389 {
 					score += 0.5;
 					factors.push("remote_access_port".to_string());
 				}
@@ -166,6 +166,14 @@ impl ThreatDetector {
 					SecuritySeverity::Low => score += 0.3,
 				}
 				factors.push("security_alert".to_string());
+			}
+			SecurityEvent::MemoryAccess { .. } => {
+				score += 0.5;
+				factors.push("memory_access".to_string());
+			}
+			SecurityEvent::NetworkPacket { .. } => {
+				score += 0.3;
+				factors.push("network_packet".to_string());
 			}
 		}
 
@@ -214,6 +222,12 @@ impl ThreatDetector {
 			}
 			SecurityEvent::SecurityAlert { .. } => {
 				Ok(ThreatType::SuspiciousActivity)
+			}
+			SecurityEvent::MemoryAccess { .. } => {
+				Ok(ThreatType::SuspiciousActivity)
+			}
+			SecurityEvent::NetworkPacket { .. } => {
+				Ok(ThreatType::NetworkAttack)
 			}
 		}
 	}

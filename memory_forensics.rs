@@ -90,7 +90,7 @@ impl MemoryForensics {
 			pid,
 			threat_score,
 			suspicious_regions,
-			detected_patterns,
+			detected_patterns: detected_patterns.clone(),
 			analysis_timestamp: std::time::SystemTime::now()
 				.duration_since(std::time::UNIX_EPOCH)?
 				.as_secs(),
@@ -111,12 +111,15 @@ impl MemoryForensics {
 			let region = MemoryRegion {
 				start_address: map.address.0,
 				end_address: map.address.1,
-				permissions: map.perms.to_string(),
+				permissions: format!("{:?}", map.perms),
 				size: map.address.1 - map.address.0,
-				path: map.pathname.clone(),
-				is_executable: map.perms.contains('x'),
-				is_writable: map.perms.contains('w'),
-				is_readable: map.perms.contains('r'),
+				path: match &map.pathname {
+					procfs::process::MMapPath::Path(p) => Some(p.to_string_lossy().into_owned()),
+					_ => None,
+				},
+				is_executable: map.perms.contains(procfs::process::MMPermissions::EXECUTE),
+				is_writable: map.perms.contains(procfs::process::MMPermissions::WRITE),
+				is_readable: map.perms.contains(procfs::process::MMPermissions::READ),
 				content_hash: None,
 			};
 
