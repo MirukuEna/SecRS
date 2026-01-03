@@ -1,4 +1,4 @@
-use sare_security::{SecurityManager, SecurityConfig, SecurityEvent, SecuritySeverity};
+use sare_security::{SecurityConfig, SecurityEvent, SecurityManager};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -21,7 +21,9 @@ async fn main() -> anyhow::Result<()> {
     let safe_event = SecurityEvent::CommandExecution {
         command: "ls -la /var/log".to_string(),
         user: "sysadmin".to_string(),
-        timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs(),
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs(),
         success: true,
     };
     println!("[EVENT] Command Execution: 'ls -la /var/log' by user 'sysadmin'");
@@ -35,13 +37,15 @@ async fn main() -> anyhow::Result<()> {
     let malicious_event = SecurityEvent::CommandExecution {
         command: "rm -rf / --no-preserve-root".to_string(),
         user: "intruder".to_string(),
-        timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs(),
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs(),
         success: false,
     };
     println!("[EVENT] Command Execution: 'rm -rf /' by user 'intruder'");
     println!("[ANALYSIS] Analyzing threat patterns and behavior...");
     let actions = manager.process_security_event(malicious_event).await?;
-    
+
     println!("[RESULT] System Response:");
     for action in actions {
         println!("  - 🛑 {:?}", action);

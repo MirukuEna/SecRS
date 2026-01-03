@@ -23,8 +23,8 @@ use tokio::sync::RwLock;
  * of custody documentation for legal and investigative purposes.
  */
 pub struct ForensicCapture {
-    config: Arc<RwLock<crate::SecurityConfig>>,
-    evidence_storage: String,
+    _config: Arc<RwLock<crate::SecurityConfig>>,
+    _evidence_storage: String,
     capture_enabled: bool,
 }
 
@@ -47,8 +47,8 @@ pub enum EvidenceType {
 impl ForensicCapture {
     pub async fn new(config: Arc<RwLock<crate::SecurityConfig>>) -> Result<Self> {
         Ok(Self {
-            config,
-            evidence_storage: "/var/forensics".to_string(),
+            _config: config,
+            _evidence_storage: "/var/forensics".to_string(),
             capture_enabled: true,
         })
     }

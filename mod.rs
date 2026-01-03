@@ -1,36 +1,46 @@
 /**
- * Ruthless Security System for Sare Terminal
+ * Security Manager Module.
  *
- * Provides comprehensive security capabilities including threat detection,
- * automated response, process isolation, and behavioral analysis.
+ * This module serves as the central nervous system of SecRS. It orchestrates the
+ * integration of various security subsystems (Monitoring, Threat Detection,
+ * Network Analysis, etc.) into a unified response platform.
  *
- * Architecture: Modular security system with independent components
- * for threat detection, response, isolation, and monitoring.
+ * Architecture:
+ * - Uses an `Arc<RwLock<T>>` pattern for shared state management, allowing
+ *   safe concurrent access from multiple background tasks (e.g., monitoring loop vs. API requests).
+ * - Implements a unified event pipeline (`process_security_event`) that aggregates
+ *   signals from ML, behavioral analysis, and static rules to score threats.
+ *
+ * Author: KleaSCM
+ * Email: KleaSCM@gmail.com
  */
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+
 use tokio::sync::RwLock;
 
 pub mod behavioral_analysis;
 pub mod deception_system;
+pub mod encryption;
 pub mod forensic_capture;
 pub mod memory_forensics;
 pub mod ml_threat_detection;
+pub mod monitoring;
 pub mod network_analysis;
 pub mod response_automation;
 pub mod threat_detection;
 
-use behavioral_analysis::{BehaviorPattern, BehavioralAnalyzer};
-use deception_system::{DeceptionSystem, HoneypotManager};
-use forensic_capture::{EvidenceType, ForensicCapture};
+use behavioral_analysis::BehavioralAnalyzer;
+use deception_system::DeceptionSystem;
+use forensic_capture::ForensicCapture;
 use memory_forensics::{MemoryAnalysisResult, MemoryForensics};
 use ml_threat_detection::{MLThreatDetector, MLThreatResult};
+use monitoring::SecurityMonitor;
 use network_analysis::{NetworkAnalysisResult, NetworkAnalyzer};
 use response_automation::ResponseAutomation;
-use threat_detection::{ThreatDetector, ThreatScore, ThreatType};
+use threat_detection::{ThreatDetector, ThreatScore};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityConfig {
@@ -182,7 +192,7 @@ pub enum SecuritySeverity {
 }
 
 pub struct SecurityManager {
-    config: Arc<RwLock<SecurityConfig>>,
+    _config: Arc<RwLock<SecurityConfig>>,
     threat_detector: ThreatDetector,
     response_automation: ResponseAutomation,
     behavioral_analyzer: BehavioralAnalyzer,
@@ -191,6 +201,7 @@ pub struct SecurityManager {
     memory_forensics: MemoryForensics,
     network_analyzer: NetworkAnalyzer,
     ml_threat_detector: MLThreatDetector,
+    security_monitor: SecurityMonitor,
     active: bool,
 }
 
@@ -204,9 +215,10 @@ impl SecurityManager {
         let memory_forensics = MemoryForensics::new()?;
         let network_analyzer = NetworkAnalyzer::new()?;
         let ml_threat_detector = MLThreatDetector::new()?;
+        let security_monitor = SecurityMonitor::new(config.clone()).await?;
 
         Ok(Self {
-            config,
+            _config: config,
             threat_detector,
             response_automation,
             behavioral_analyzer,
@@ -215,6 +227,7 @@ impl SecurityManager {
             memory_forensics,
             network_analyzer,
             ml_threat_detector,
+            security_monitor,
             active: true,
         })
     }
@@ -226,9 +239,20 @@ impl SecurityManager {
         let threat_score = self.threat_detector.analyze_threat(&event).await?;
         let threat_type = self.threat_detector.classify_threat(&event).await?;
 
+        // Analysis Pipeline:
+        // 1. Behavioral Analysis: Establish baseline deviation (anomaly detection).
+        // 2. ML Detection: Probabilistic threat scoring based on trained models.
+        // 3. Monitoring: Real-time pattern matching and rule-based alerts.
+        //
+        // These signals are combined to form a final threat score. We weight ML
+        // and static analysis equally (50/50) to balance precision (ML) with
+        // determinism (rules).
         let behavior_pattern = self.behavioral_analyzer.analyze_behavior(&event).await?;
 
         let ml_result = self.ml_threat_detector.analyze_threat(&event).await?;
+
+        // Process event through security monitor
+        self.security_monitor.process_event(&event).await?;
 
         let combined_threat_score = (threat_score.value + ml_result.threat_score) / 2.0;
 
@@ -423,7 +447,7 @@ impl SecurityManager {
         self.active
     }
 
-    pub fn update_config(&mut self, config: SecurityConfig) {
+    pub fn update_config(&mut self, _config: SecurityConfig) {
         // Update configuration across all components
     }
 
